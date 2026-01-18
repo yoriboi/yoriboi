@@ -6,108 +6,71 @@
     <title>요리보이 레시피북</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: #f7f7f7; 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            justify-content: center; 
-        }
-        .container { 
-            width: 100%; 
-            max-width: 420px; 
-            background-color: #fff; 
-            min-height: 100vh; 
-            padding: 30px 20px; 
-            box-sizing: border-box;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
-        }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f7f7f7; margin: 0; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 420px; background-color: #fff; min-height: 100vh; padding: 30px 20px; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .profile { text-align: center; margin-bottom: 30px; }
+        .profile-img { width: 100px; height: 100px; border-radius: 50%; background: #eee; margin-bottom: 10px; }
         
-        /* 프로필 영역 */
-        .profile { 
-            text-align: center; 
-            margin-bottom: 40px; 
-        }
-        .profile-img { 
-            width: 110px; 
-            height: 110px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-            border: 2px solid #eaeaea;
-            margin-bottom: 15px;
-        }
-        .profile-name { 
-            font-size: 24px; 
-            font-weight: 700; 
-            color: #333; 
-            margin: 0; 
-        }
-        .profile-desc { 
-            font-size: 14px; 
-            color: #888; 
-            margin-top: 8px; 
-        }
-
-        /* 링크 카드 스타일 */
-        #link-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .card { 
-            display: flex; 
-            align-items: center; 
-            background: #fff; 
-            border: 1px solid #eee;
-            border-radius: 16px; 
-            padding: 12px; 
-            text-decoration: none; 
-            color: inherit; 
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .card:active { 
-            transform: scale(0.98); 
-            background-color: #fafafa;
-        }
-        .card-img { 
-            width: 60px; 
-            height: 60px; 
-            border-radius: 12px; 
-            object-fit: cover; 
-            margin-right: 15px; 
-            flex-shrink: 0;
-            background-color: #eee;
-        }
-        .card-content {
-            flex: 1;
-            overflow: hidden;
-        }
-        .card-title { 
-            font-size: 16px; 
-            font-weight: 600; 
-            color: #333; 
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .card-link { 
-            font-size: 12px; 
-            color: #aaa; 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .card-arrow {
-            color: #ccc;
-            margin-left: 10px;
-        }
-
-        /* 로딩/에러 메시지 */
-        .message { text-align: center; color: #999; margin-top: 50px; font-size: 14px; }
+        .card { display: flex; align-items: center; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 10px; text-decoration: none; color: #333; transition: 0.2s; }
+        .card:active { background: #f5f5f5; transform: scale(0.98); }
+        .card-img { width: 50px; height: 50px; border-radius: 8px; margin-right: 15px; background: #ddd; object-fit: cover; }
+        .card-title { font-weight: 600; font-size: 16px; }
+        
+        #status { text-align: center; color: #666; margin-top: 20px; font-weight: bold; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 8px; font-size: 12px; text-align: left; }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="profile">
+            <img src="https://github.com/yoriboi.png" class="profile-img">
+            <h2>요리보이</h2>
+            <p>데이터 로딩 테스트 중...</p>
+        </div>
+
+        <div id="status">로딩 중... (10초만 기다려주세요)</div>
+        <div id="link-list"></div>
+    </div>
+
+    <script>
+        const list = document.getElementById('link-list');
+        const status = document.getElementById('status');
+
+        // 1. links.json 불러오기 시도
+        fetch('./links.json?v=' + new Date().getTime())
+            .then(response => {
+                if (!response.ok) throw new Error("파일을 찾을 수 없음 (" + response.status + ")");
+                return response.json();
+            })
+            .then(data => {
+                if (data.length === 0) throw new Error("데이터가 비어있음 (Empty JSON)");
+                render(data);
+                status.style.display = 'none'; // 성공하면 상태 메시지 숨김
+            })
+            .catch(error => {
+                // 2. 실패하면 에러 메시지 띄우고, 비상용 버튼 보여주기
+                console.error(error);
+                status.innerHTML = `<div class="error">⚠️ 에러 발생!<br>${error.message}</div>`;
+                
+                // 비상용 데이터 (화면 확인용)
+                const emergencyData = [
+                    { title: "🚨 비상용 버튼 (화면 테스트)", link: "#", image: "" },
+                    { title: "데이터 연결이 필요합니다", link: "#", image: "" }
+                ];
+                render(emergencyData);
+            });
+
+        function render(items) {
+            list.innerHTML = '';
+            items.forEach(item => {
+                let img = item.image || 'https://ui-avatars.com/api/?name=Link';
+                list.innerHTML += `
+                    <a href="${item.link}" class="card" target="_blank">
+                        <img src="${img}" class="card-img" onerror="this.src='https://ui-avatars.com/api/?name=E'">
+                        <div class="card-title">${item.title}</div>
+                    </a>`;
+            });
+        }
+    </script>
+</body>
+</html>
