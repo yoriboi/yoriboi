@@ -1,8 +1,7 @@
 import os, json, requests
 
-# 깃허브 금고(Secrets)에서 정보 가져오기
-NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
-DATABASE_ID = os.environ.get('NOTION_DATABASE_ID')
+NOTION_TOKEN = os.environ['NOTION_TOKEN']
+DATABASE_ID = os.environ['NOTION_DATABASE_ID']
 
 headers = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
@@ -12,36 +11,32 @@ headers = {
 
 def get_recipes():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-    try:
-        response = requests.post(url, headers=headers)
-        data = response.json()
-        
-        if response.status_code != 200:
-            print(f"❌ 노션 연결 에러: {data.get('message')}")
-            return
-
-        recipes = []
-        for row in data.get("results", []):
-            try:
-                # 사진 4번의 '레시피명' 칸을 정확히 읽습니다.
-                props = row.get("properties", {})
-                name_list = props.get("레시피명", {}).get("title", [])
-                
-                if name_list:
-                    name = name_list[0]["text"]["content"]
-                    link = row.get("url", "#") # 노션 페이지 주소 자동 연결
-                    recipes.append({"name": name, "link": link})
-            except Exception as e:
-                print(f"⚠️ 항목 읽기 건너뜀: {e}")
-                continue
-        
-        # 데이터 저장
-        with open("recipes.json", "w", encoding="utf-8") as f:
-            json.dump(recipes, f, ensure_ascii=False, indent=4)
-        print(f"✅ {len(recipes)}개의 레시피를 성공적으로 가져왔습니다!")
-
-    except Exception as e:
-        print(f"❌ 시스템 오류: {e}")
+    
+    # ✅ 정렬 옵션 추가: 만든 날짜(created_time) 기준 내림차순(descending)
+    # 이렇게 하면 가장 최근에 만든 레시피가 맨 위로 옵니다!
+    query_payload = {
+        "sorts": [
+            {
+                "timestamp": "created_time",
+                "direction": "descending"
+            }
+        ]
+    }
+    
+    response = requests.post(url, headers=headers, json=query_payload)
+    data = response.json()
+    
+    recipes = []
+    for row in data.get("results", []):
+        try:
+            name = row["properties"]["이름"]["title"][0]["text"]["content"]
+            link = row["properties"].get("URL", {}).get("url", "#")
+            recipes.append({"name": name, "link": link})
+        except Exception as e:
+            print(f"항목 건너뜀: {e}")
+            
+    with open("recipes.json", "w", encoding="utf-8") as f:
+        json.dump(recipes, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     get_recipes()
