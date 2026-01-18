@@ -1,64 +1,70 @@
 import os, json, requests
 
-# 1. 깃허브 비밀금고에서 정보 꺼내기
-NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
-DATABASE_ID = os.environ.get('NOTION_DATABASE_ID')
+# 환경변수 가져오기
+token = os.environ.get('NOTION_TOKEN')
+database_id = os.environ.get('NOTION_DATABASE_ID')
 
 headers = {
-    "Authorization": f"Bearer {NOTION_TOKEN}",
+    "Authorization": f"Bearer {token}",
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28"
 }
 
 def get_data():
-    # 2. 노션에 접속해서 데이터 달라고 요청
-    url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-    payload = { "page_size": 100 } # 최대 100개까지 가져옴
+    url = f"https://api.notion.com/v1/databases/{database_id}/query"
+    payload = { "page_size": 100 }
 
     try:
         response = requests.post(url, headers=headers, json=payload)
         data = response.json()
-        
-        # 연결 안 되면 에러 메시지 띄움
+
+        # 연결 실패 시 에러 출력
         if response.status_code != 200:
-            print(f"❌ 노션 연결 실패: {data}")
+            print(f"❌ 노션 연결 실패! (ID나 토큰 확인): {data}")
             return
 
-        items = []
-        # 3. 받아온 데이터를 하나씩 포장하기
-        for row in data.get("results", []):
+        results = []
+        for page in data.get("results", []):
             try:
-                props = row.get("properties", {})
+                props = page.get("properties", {})
                 
-                # (1) 이름 가져오기
-                title_list = props.get("이름", {}).get("title", [])
-                title = title_list[0]["text"]["content"] if title_list else "제목 없음"
-                
-                # (2) URL 가져오기 (대소문자 URL 정확히 일치해야 함!)
-                link = props.get("URL", {}).get("url", "#")
-                
-                # (3) 이미지 가져오기
-                files = props.get("이미지", {}).get("files", [])
-                image_url = "https://dummyimage.com/600x400/eee/aaa&text=No+Image" # 이미지 없으면 기본값
-                
-                if files:
-                    file_obj = files[0]
-                    # 노션에 직접 올린 파일인지, 외부 링크인지 확인
-                    if 'file' in file_obj:
-                        image_url = file_obj['file']['url']
-                    elif 'external' in file_obj:
-                        image_url = file_obj['external']['url']
+                # 1. 제목 (이름)
+                # '이름', 'Name', '제목' 중 하나라도 있으면 가져옴
+                title_prop = props.get("이름") or props.get("Name") or props.get("제목")
+                title = "제목 없음"
+                if title_prop and title_prop['title']:
+                    title = title_prop['title'][0]['text']['content']
 
-                # 포장 완료된 상자
-                items.append({ "title": title, "link": link, "image": image_url })
+                # 2. 링크 (URL)
+                # 대소문자 상관없이 'URL', 'url', 'Link' 다 찾아봄
+                url_prop = props.get("URL") or props.get("url") or props.get("Link")
+                link = "#"
+                if url_prop and url_prop['url']:
+                    link = url_prop['url']
                 
-            except Exception:
-                continue # 빈 칸이 있으면 건너뜀
-        
-        # 4. links.json 파일로 저장 (배달 준비 끝)
+                # 3. 이미지
+                files_prop = props.get("이미지") or props.get("Image") or props.get("사진")
+                image = "https://ui-avatars.com/api/?name=No+Image"
+                if files_prop and files_prop['files']:
+                    f = files_prop['files'][0]
+                    image = f.get('file', {}).get('url') or f.get('external', {}).get('url')
+
+                # 데이터 담기 (링크가 있는 것만!)
+                if link != "#": 
+                    results.append({"title": title, "link": link, "image": image})
+                    print(f"✅ 가져옴: {title}")
+                else:
+                    print(f"⚠️ 건너뜀 (링크 없음): {title}")
+
+            except Exception as e:
+                print(f"❌ 데이터 처리 중 에러: {e}")
+                continue
+
+        # 파일 저장 (links.json)
         with open("links.json", "w", encoding="utf-8") as f:
-            json.dump(items, f, ensure_ascii=False, indent=4)
-        print(f"✅ 총 {len(items)}개의 버튼을 성공적으로 가져왔습니다!")
+            json.dump(results, f, ensure_ascii=False, indent=4)
+        
+        print(f"🎉 총 {len(results)}개의 데이터를 links.json으로 저장했습니다.")
 
     except Exception as e:
         print(f"❌ 시스템 에러: {e}")
