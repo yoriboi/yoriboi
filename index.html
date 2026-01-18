@@ -38,31 +38,31 @@
         .profile p { color: #888; font-size: 13px; margin: 0; font-weight: 500; }
         .profile .highlight { color: var(--primary-color); }
 
-        /* 📟 전광판 (방문자 수) - 프로필 하단으로 이동 */
-        .visit-counter { margin: 10px 0 20px 0; text-align: center; }
+        /* 📟 전광판 (방문자 수) */
+        .visit-counter { margin: 5px 0 15px 0; text-align: center; }
         .visit-counter img { height: 20px; vertical-align: middle; }
-        
-        /* SNS */
-        .sns-links { display: flex; justify-content: center; gap: 12px; margin-bottom: 25px; }
-        .sns-btn { width: 38px; height: 38px; border-radius: 50%; background: #f5f5f5; color: #555; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; transition: 0.2s; }
+
+        /* 🛍️ 인포크(쇼핑) 전용 버튼 (새로 추가됨!) */
+        .shop-btn-area { margin-bottom: 20px; text-align: center; }
+        .shop-btn {
+            display: block; width: 100%; padding: 12px 0;
+            background-color: #333; color: #fff; text-decoration: none;
+            border-radius: 12px; font-weight: 700; font-size: 14px;
+            transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .shop-btn:hover { background-color: #000; transform: translateY(-2px); }
+        .shop-btn i { margin-right: 6px; }
+
+        /* SNS (아이콘만 깔끔하게) */
+        .sns-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
+        .sns-btn { width: 40px; height: 40px; border-radius: 50%; background: #f5f5f5; color: #555; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 20px; transition: 0.2s; }
         .sns-btn:hover { background: var(--primary-color); color: #fff; transform: scale(1.1); }
-        .sns-btn.tiktok { font-size: 17px; } 
-        /* 인포크/쇼핑 버튼 추가 (검은색) */
-        .sns-btn.shop { background-color: #333; color: #fff; }
-        .sns-btn.shop:hover { background-color: #000; }
+        .sns-btn.tiktok { font-size: 18px; } 
 
         /* 검색창 */
-        .search-box { position: sticky; top: 0; background: #fff; padding: 0 0 10px 0; z-index: 10; }
+        .search-box { position: sticky; top: 0; background: #fff; padding: 0 0 15px 0; z-index: 10; }
         .search-input { width: 100%; padding: 12px 15px; font-size: 15px; border: 2px solid #eee; border-radius: 12px; background-color: #f9f9f9; outline: none; transition: 0.3s; }
         .search-input:focus { border-color: var(--primary-color); background-color: #fff; }
-
-        /* 🔘 접기/펴기 버튼 디자인 */
-        .toggle-btn-area { text-align: right; margin-bottom: 10px; }
-        .toggle-btn {
-            background: none; border: none; color: #888; font-size: 12px; cursor: pointer;
-            padding: 5px 10px; border-radius: 5px; background-color: #f5f5f5;
-        }
-        .toggle-btn:hover { color: #333; }
 
         /* 섹션 헤더 */
         .section-header { 
@@ -72,10 +72,10 @@
         .section-title { font-size: 18px; font-weight: 800; color: #222; margin: 0; }
         .section-icon { margin-right: 8px; font-size: 18px; }
 
-        /* 🖼️ 리스트 & 카드 디자인 (3단으로 변경됨!) */
+        /* 🖼️ 리스트 (3단, 항상 보임) */
         #link-list { 
             display: grid; 
-            grid-template-columns: repeat(3, 1fr); /* 4단 -> 3단 */
+            grid-template-columns: repeat(3, 1fr); 
             gap: 10px; padding-bottom: 50px; 
         }
         .card { display: flex; flex-direction: column; background: #fff; border-radius: 10px; overflow: hidden; text-decoration: none; color: #333; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: all 0.2s ease; }
@@ -108,19 +108,20 @@
             </a>
         </div>
 
+        <div class="shop-btn-area">
+            <a href="https://link.inpock.co.kr/yoriboi" target="_blank" class="shop-btn">
+                <i class="fas fa-shopping-cart"></i> 공구 & 추천템 보러가기
+            </a>
+        </div>
+
         <div class="sns-links">
             <a href="https://instagram.com/yoriboi_recipe" target="_blank" class="sns-btn instagram"><i class="fab fa-instagram"></i></a>
             <a href="https://youtube.com/@요리보이" target="_blank" class="sns-btn youtube"><i class="fab fa-youtube"></i></a>
             <a href="https://www.tiktok.com/@yoriboi_recipe" target="_blank" class="sns-btn tiktok"><i class="fab fa-tiktok"></i></a>
-            <a href="https://link.inpock.co.kr/내주소넣기" target="_blank" class="sns-btn shop"><i class="fas fa-shopping-cart"></i></a>
         </div>
 
         <div class="search-box">
             <input type="text" id="search-input" class="search-input" placeholder="🔍 레시피 검색...">
-        </div>
-
-        <div class="toggle-btn-area">
-            <button id="toggle-list-btn" class="toggle-btn">레시피 목록 접기 🔼</button>
         </div>
         
         <div class="section-header">
@@ -134,8 +135,6 @@
         </div>
         
         <div id="link-list"></div>
-
-        <div style="height: 30px;"></div>
     </div>
 
     <script>
@@ -143,7 +142,6 @@
         const statusDiv = document.getElementById('status');
         const listDiv = document.getElementById('link-list');
         const searchInput = document.getElementById('search-input');
-        const toggleBtn = document.getElementById('toggle-list-btn');
 
         fetch('./links.json?v=' + new Date().getTime())
             .then(res => res.json())
@@ -168,21 +166,7 @@
             const filtered = allRecipes.filter(item => 
                 item.title.toLowerCase().includes(keyword)
             );
-            // 검색 시 자동으로 목록 펼치기
-            listDiv.style.display = "grid";
-            toggleBtn.innerHTML = "레시피 목록 접기 🔼";
             renderList(filtered);
-        });
-
-        // 🔘 접기/펴기 기능 로직
-        toggleBtn.addEventListener('click', function() {
-            if (listDiv.style.display === "none") {
-                listDiv.style.display = "grid"; // 펼치기
-                toggleBtn.innerHTML = "레시피 목록 접기 🔼";
-            } else {
-                listDiv.style.display = "none"; // 접기
-                toggleBtn.innerHTML = "레시피 목록 펼치기 🔽";
-            }
         });
 
         function renderList(items) {
@@ -192,12 +176,19 @@
                 return;
             }
             items.forEach(item => {
-                const img = item.image || 'https://ui-avatars.com/api/?name=Yori&background=FF6B00&color=fff';
+                // 🛠️ 이미지 찾기 로직 강화 (image, img, src 등 다 뒤짐)
+                let imgSrc = item.image || item.img || item.src || '';
+                
+                // 이미지가 없으면 기본 로고 표시
+                if (!imgSrc) {
+                    imgSrc = 'https://ui-avatars.com/api/?name=Yori&background=FF6B00&color=fff';
+                }
+
                 const title = item.title || '제목 없음';
                 
                 const html = `
                     <a href="${item.link}" class="card" target="_blank">
-                        <img src="${img}" class="card-img" loading="lazy">
+                        <img src="${imgSrc}" class="card-img" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=Error&background=ddd&color=333'">
                         <div class="card-info">
                             <div class="card-title">${title}</div>
                         </div>
