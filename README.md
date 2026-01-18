@@ -1,4 +1,4 @@
-# 🍳 요리보이 레시피 본점
+# 🍳 요리보이 레시피 ✨
 
 ### [👉 여기를 눌러서 레시피 보기](https://yoriboi.github.io/yoriboi-recipe/)
 
