@@ -16,17 +16,20 @@ def get_recipes():
     data = response.json()
     
     recipes = []
-    # 노션 창고의 각 줄을 하나씩 읽어옵니다
+    # 노션 표의 각 줄을 자동으로 읽어옵니다
     for row in data.get("results", []):
         try:
-            # ⚠️ 중요: 노션 열 이름이 '이름'과 'URL'이어야 합니다!
-            name = row["properties"]["이름"]["title"][0]["text"]["content"]
-            link = row["properties"].get("URL", {}).get("url", "#")
+            # 사용자님의 표 설정인 '레시피명' 칸을 읽습니다
+            name = row["properties"]["레시피명"]["title"][0]["text"]["content"]
+            
+            # 노션 페이지 자체 주소를 링크로 사용합니다
+            link = row.get("url", "#")
+            
             recipes.append({"name": name, "link": link})
         except Exception as e:
-            print(f"항목 건너뜀: {e}")
+            print(f"오류 발생 항목 건너뜀: {e}")
             
-    # 읽어온 데이터를 recipes.json 파일로 저장합니다
+    # 결과를 recipes.json으로 저장합니다
     with open("recipes.json", "w", encoding="utf-8") as f:
         json.dump(recipes, f, ensure_ascii=False, indent=4)
 
