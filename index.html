@@ -6,70 +6,124 @@
     <title>요리보이 레시피북</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f7f7f7; margin: 0; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 420px; background-color: #fff; min-height: 100vh; padding: 30px 20px; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-        .profile { text-align: center; margin-bottom: 30px; }
-        .profile-img { width: 100px; height: 100px; border-radius: 50%; background: #eee; margin-bottom: 10px; }
+        /* 1. 기본 설정: 깔끔한 폰트와 배경 */
+        body { font-family: 'Pretendard', sans-serif; background-color: #ffffff; margin: 0; display: flex; justify-content: center; color: #333; }
+        .container { width: 100%; max-width: 450px; min-height: 100vh; padding: 20px; box-sizing: border-box; }
         
-        .card { display: flex; align-items: center; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 10px; text-decoration: none; color: #333; transition: 0.2s; }
-        .card:active { background: #f5f5f5; transform: scale(0.98); }
-        .card-img { width: 50px; height: 50px; border-radius: 8px; margin-right: 15px; background: #ddd; object-fit: cover; }
-        .card-title { font-weight: 600; font-size: 16px; }
+        /* 2. 프로필 영역: 심플하게 */
+        .header { text-align: center; margin: 30px 0 20px 0; }
+        .profile-img { width: 90px; height: 90px; border-radius: 50%; background: #f0f0f0; margin-bottom: 15px; object-fit: cover; border: 1px solid #eee; }
+        .header h1 { font-size: 24px; font-weight: 700; margin: 0 0 5px 0; letter-spacing: -0.5px; }
+        .header p { font-size: 14px; color: #888; margin: 0; }
+
+        /* 3. 검색창: 눈에 잘 띄고 입력하기 편하게 */
+        .search-wrap { position: sticky; top: 10px; z-index: 100; background: rgba(255,255,255,0.95); padding: 10px 0; backdrop-filter: blur(5px); }
+        .search-box { 
+            width: 100%; 
+            padding: 14px 15px; 
+            font-size: 16px; 
+            border: 2px solid #eee; 
+            border-radius: 12px; 
+            background: #f9f9f9; 
+            box-sizing: border-box; 
+            transition: all 0.2s;
+            font-family: inherit; /* 폰트 상속 */
+        }
+        .search-box:focus { outline: none; border-color: #333; background: #fff; }
+        .search-box::placeholder { color: #aaa; }
+
+        /* 4. 리스트: 카드 형태 */
+        .card { 
+            display: flex; align-items: center; 
+            background: #fff; 
+            border: 1px solid #f0f0f0; 
+            border-radius: 12px; 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            text-decoration: none; 
+            color: #333; 
+            transition: transform 0.1s, background 0.1s; 
+        }
+        .card:active { transform: scale(0.98); background-color: #f5f5f5; }
         
-        #status { text-align: center; color: #666; margin-top: 20px; font-weight: bold; }
-        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 8px; font-size: 12px; text-align: left; }
+        .card-img { width: 50px; height: 50px; border-radius: 10px; margin-right: 15px; background: #eee; object-fit: cover; flex-shrink: 0; }
+        .card-content { flex: 1; min-width: 0; } /* 글자 말줄임용 */
+        .card-title { font-weight: 600; font-size: 16px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-link { font-size: 12px; color: #999; }
+
+        /* 검색 결과 없음 메시지 */
+        .no-result { text-align: center; margin-top: 50px; color: #aaa; display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="profile">
-            <img src="https://github.com/yoriboi.png" class="profile-img">
-            <h2>요리보이</h2>
-            <p>데이터 로딩 테스트 중...</p>
+        <div class="header">
+            <img src="https://github.com/yoriboi.png" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=YB&background=random'">
+            <h1>요리보이 레시피</h1>
+            <p id="total-count">맛있는 레시피 로딩 중...</p>
         </div>
 
-        <div id="status">로딩 중... (10초만 기다려주세요)</div>
-        <div id="link-list"></div>
+        <div class="search-wrap">
+            <input type="text" id="search" class="search-box" placeholder="🔍 먹고 싶은 메뉴 검색 (예: 김치찌개)" autocomplete="off">
+        </div>
+
+        <div id="list"></div>
+        <div id="no-result" class="no-result">찾으시는 레시피가 없어요 😢</div>
     </div>
 
     <script>
-        const list = document.getElementById('link-list');
-        const status = document.getElementById('status');
+        const listEl = document.getElementById('list');
+        const countEl = document.getElementById('total-count');
+        const noResultEl = document.getElementById('no-result');
+        let recipes = [];
 
-        // 1. links.json 불러오기 시도
-        fetch('./links.json?v=' + new Date().getTime())
-            .then(response => {
-                if (!response.ok) throw new Error("파일을 찾을 수 없음 (" + response.status + ")");
-                return response.json();
-            })
+        // 1. 데이터 가져오기
+        fetch('./links.json?v=' + Date.now())
+            .then(res => res.json())
             .then(data => {
-                if (data.length === 0) throw new Error("데이터가 비어있음 (Empty JSON)");
-                render(data);
-                status.style.display = 'none'; // 성공하면 상태 메시지 숨김
+                recipes = data;
+                countEl.innerText = `총 ${recipes.length}개의 레시피가 있습니다`;
+                render(recipes);
             })
-            .catch(error => {
-                // 2. 실패하면 에러 메시지 띄우고, 비상용 버튼 보여주기
-                console.error(error);
-                status.innerHTML = `<div class="error">⚠️ 에러 발생!<br>${error.message}</div>`;
-                
-                // 비상용 데이터 (화면 확인용)
-                const emergencyData = [
-                    { title: "🚨 비상용 버튼 (화면 테스트)", link: "#", image: "" },
-                    { title: "데이터 연결이 필요합니다", link: "#", image: "" }
-                ];
-                render(emergencyData);
+            .catch(err => {
+                countEl.innerText = "데이터를 불러오지 못했습니다";
+                console.error(err);
             });
 
-        function render(items) {
-            list.innerHTML = '';
-            items.forEach(item => {
-                let img = item.image || 'https://ui-avatars.com/api/?name=Link';
-                list.innerHTML += `
-                    <a href="${item.link}" class="card" target="_blank">
-                        <img src="${img}" class="card-img" onerror="this.src='https://ui-avatars.com/api/?name=E'">
-                        <div class="card-title">${item.title}</div>
-                    </a>`;
+        // 2. 검색 기능 (핵심!)
+        document.getElementById('search').addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase().replace(/\s/g, ''); // 입력값 공백 제거
+            
+            const filtered = recipes.filter(item => {
+                // 제목의 공백도 제거해서 비교 (ex: '김치 찌개' == '김치찌개')
+                const title = item.title.toLowerCase().replace(/\s/g, ''); 
+                return title.includes(keyword);
             });
+
+            render(filtered);
+        });
+
+        // 3. 화면 그리기
+        function render(items) {
+            listEl.innerHTML = ''; // 초기화
+
+            if (items.length === 0) {
+                noResultEl.style.display = 'block'; // 결과 없음 표시
+            } else {
+                noResultEl.style.display = 'none';
+                items.forEach(item => {
+                    const img = item.image || 'https://ui-avatars.com/api/?name=R&background=eee&color=999';
+                    listEl.innerHTML += `
+                        <a href="${item.link}" class="card" target="_blank">
+                            <img src="${img}" class="card-img" onerror="this.src='https://ui-avatars.com/api/?name=Error'">
+                            <div class="card-content">
+                                <div class="card-title">${item.title}</div>
+                                <div class="card-link">레시피 보러가기 👉</div>
+                            </div>
+                        </a>
+                    `;
+                });
+            }
         }
     </script>
 </body>
